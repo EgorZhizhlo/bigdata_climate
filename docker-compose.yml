@@ -1,0 +1,130 @@
+version: '3.8'
+
+services:
+  # --- DATABASE ---
+  postgres:
+    image: postgres:16
+    container_name: climate_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: climate
+      POSTGRES_PASSWORD: climate
+      POSTGRES_DB: climate_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - climate
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: climate_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - climate
+
+  # --- JUPYTER ---
+  jupyter:
+    image: jupyter/base-notebook:latest
+    container_name: climate_jupyter
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./notebooks:/home/jovyan/work
+      - ./data_raw:/data_raw
+    command: >
+      start-notebook.sh --NotebookApp.token=''
+    networks:
+      - climate
+
+  # --- PREFECT SERVER ---
+  prefect-server:
+    image: prefecthq/prefect:2-latest
+    container_name: climate_prefect_server
+    restart: unless-stopped
+    command: ["prefect", "server", "start", "--host", "0.0.0.0"]
+    ports:
+      - "4200:4200"
+    networks:
+      - climate
+
+  # PREFECT AGENT
+  prefect-agent:
+    image: prefecthq/prefect:2-latest
+    container_name: climate_prefect_agent
+    restart: unless-stopped
+    depends_on:
+      - prefect-server
+      - postgres
+    command: ["prefect", "agent", "start", "-q", "default"]
+    volumes:
+      - ./data_raw:/data_raw
+    networks:
+      - climate
+
+  # --- DASK ---
+  dask-scheduler:
+    image: daskdev/dask:latest
+    container_name: climate_dask_scheduler
+    restart: unless-stopped
+    command: dask-scheduler
+    ports:
+      - "8786:8786"
+      - "8787:8787"
+    volumes:
+      - ./data_raw:/data_raw
+    networks:
+      - climate
+
+  dask-worker-1:
+    image: daskdev/dask:latest
+    container_name: climate_dask_worker_1
+    restart: unless-stopped
+    depends_on:
+      - dask-scheduler
+    command: dask-worker tcp://dask-scheduler:8786 --memory-limit=2GB --nthreads=2
+    volumes:
+      - ./data_raw:/data_raw
+    networks:
+      - climate
+
+  dask-worker-2:
+    image: daskdev/dask:latest
+    container_name: climate_dask_worker_2
+    restart: unless-stopped
+    depends_on:
+      - dask-scheduler
+    command: dask-worker tcp://dask-scheduler:8786 --memory-limit=2GB --nthreads=2
+    volumes:
+      - ./data_raw:/data_raw
+    networks:
+      - climate
+
+  dask-worker-3:
+    image: daskdev/dask:latest
+    container_name: climate_dask_worker_3
+    restart: unless-stopped
+    depends_on:
+      - dask-scheduler
+    command: dask-worker tcp://dask-scheduler:8786 --memory-limit=2GB --nthreads=2
+    volumes:
+      - ./data_raw:/data_raw
+    networks:
+      - climate
+
+# --- VOLUMES ---
+volumes:
+  pg_data:
+
+# --- NETWORKS ---
+networks:
+  climate:
