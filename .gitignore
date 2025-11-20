@@ -1,0 +1,55 @@
+# --- Operating system cruft ---
+.DS_Store
+Thumbs.db
+
+# --- Python build/cache artifacts ---
+__pycache__/
+*.py[cod]
+*.so
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pip-wheel-metadata/
+
+# --- Virtual environments & local tooling ---
+.venv/
+venv/
+env/
+ENV/
+.env
+.env.*
+*.env
+
+# --- Editor/IDE settings ---
+.idea/
+.vscode/
+*.code-workspace
+*.sw?
+*~
+
+# --- Prefect/Dask runtime state ---
+.prefect/
+prefect.log
+prefect.orion.db
+dask-worker-space/
+
+# --- Project data & artifacts ---
+data_raw/
+data_processed/
+data/
+datasets/
+storage/
+notebooks/.ipynb_checkpoints/
+logs/
+outputs/
+
+# --- Containers / volumes ---
+pg_data/
+volumes/
+
+# --- Miscellaneous ---
+*.log
+*.tmp
+*.sqlite
+*.db
