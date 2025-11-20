@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 
 import dask.dataframe as dd
 from dask.distributed import Client
 
 from flows.settings import DATA_PROCESSED_DIR, DATA_RAW_DIR
+
+WORKER_DATA_RAW_DIR = Path(os.getenv("DASK_WORKER_DATA_RAW_DIR", "/data_raw"))
 
 
 def run_job(sample_fraction: float) -> Path:
@@ -17,8 +20,12 @@ def run_job(sample_fraction: float) -> Path:
         raise FileNotFoundError(f"No CSV files found under {DATA_RAW_DIR}")
 
     client = Client(address="tcp://dask-scheduler:8786")
+    worker_visible_paths = [
+        str(WORKER_DATA_RAW_DIR / path.name) for path in csv_files
+    ]
+
     ddf = dd.read_csv(
-        [str(path) for path in csv_files],
+        worker_visible_paths,
         assume_missing=True,
         dtype="object",
         blocksize="64MB",

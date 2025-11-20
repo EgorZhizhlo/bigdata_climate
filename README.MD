@@ -228,7 +228,7 @@ jupyter notebook
 4. Запусти моковый Prefect flow прямо на хосте: `python flows/etl_flow.py`. Хочешь выполнить его из контейнера — примонтируй репозиторий (например, `./:/app`) к сервису `prefect-agent` и используй команду `docker-compose run --rm prefect-agent python /app/flows/etl_flow.py`.
 5. Просмотри результаты:
    * PostgreSQL: таблица `climate.climate_metrics_staging` (или parquet в `data_processed/`).
-   * Файл `data_processed/dask_describe.csv` после запуска `python dask_jobs/sample_metrics.py --sample-frac 0.05`.
+   * Файл `data_processed/dask_describe.csv` после запуска `python dask_jobs/sample_metrics.py --sample-frac 0.05` (по умолчанию Dask-воркеры читают CSV из `/data_raw`, можно переопределить через `DASK_WORKER_DATA_RAW_DIR`).
 
 Готово — инфраструктура функционирует и можно переходить к реализации полноценного ETL.
 
