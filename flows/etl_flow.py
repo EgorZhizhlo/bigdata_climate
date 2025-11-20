@@ -69,6 +69,23 @@ def transform_data(file_paths: List[Path]) -> pd.DataFrame:
 
     ddf["observed_at"] = dd.to_datetime(ddf[time_column], errors="coerce")
 
+    location_columns: dict[str, str] = {}
+    for canonical, candidates in {
+        "location_id": ("location_id", "station_id"),
+        "latitude": ("latitude", "lat"),
+        "longitude": ("longitude", "lon", "lng"),
+        "elevation": ("elevation", "elev_m", "elev"),
+        "timezone": ("timezone", "tz"),
+        "timezone_abbreviation": (
+            "timezone_abbreviation",
+            "tz_abbreviation",
+            "tz_abbrev",
+        ),
+    }.items():
+        column_name = _pick_column(columns, *candidates)
+        if column_name:
+            location_columns[canonical] = column_name
+
     temperature_column = _pick_column(
         columns,
         "temperature_2m",
@@ -100,14 +117,35 @@ def transform_data(file_paths: List[Path]) -> pd.DataFrame:
         agg_map[precipitation_column] = "sum"
         rename_map[precipitation_column] = "total_precipitation"
 
+    for canonical in ("latitude", "longitude", "elevation"):
+        column_name = location_columns.get(canonical)
+        if column_name:
+            ddf[column_name] = dd.to_numeric(ddf[column_name], errors="coerce")
+
     if not agg_map:
         logger.warning("No numeric columns available for aggregation.")
         return pd.DataFrame()
 
     ddf["period_start"] = ddf["observed_at"].dt.floor("1D")
 
-    metrics_ddf = ddf.groupby("period_start").agg(agg_map)
-    metrics_df = metrics_ddf.rename(columns=rename_map).reset_index().compute()
+    group_keys = ["period_start"] + list(location_columns.values())
+    if len(group_keys) == 1:
+        logger.warning(
+            "Missing location metadata (latitude/longitude/location_id); "
+            "metrics will be aggregated for all sites together."
+        )
+
+    metrics_ddf = ddf.groupby(group_keys).agg(agg_map)
+    rename_location_map = {
+        column: canonical
+        for canonical, column in location_columns.items()
+        if column != canonical
+    }
+    metrics_df = (
+        metrics_ddf.reset_index()
+        .rename(columns={**rename_map, **rename_location_map})
+        .compute()
+    )
     metrics_df["period_level"] = "day"
     logger.info("Produced %s aggregated rows", len(metrics_df))
     return metrics_df

@@ -225,7 +225,7 @@ jupyter notebook
 1. Скопируй `.env.example` → `.env` и при необходимости поправь `POSTGRES_DSN` / пути.
 2. Запусти инфраструктуру: `docker-compose up -d postgres pgadmin prefect-server prefect-agent jupyter dask-scheduler dask-worker-1 dask-worker-2 dask-worker-3`.
 3. Помести CSV (~1 ГБ) в `data_raw/` — они автоматически пробрасываются в контейнеры.
-4. Запусти моковый Prefect flow: `docker-compose run --rm prefect-agent python flows/etl_flow.py`.
+4. Запусти моковый Prefect flow прямо на хосте: `python flows/etl_flow.py`. Хочешь выполнить его из контейнера — примонтируй репозиторий (например, `./:/app`) к сервису `prefect-agent` и используй команду `docker-compose run --rm prefect-agent python /app/flows/etl_flow.py`.
 5. Просмотри результаты:
    * PostgreSQL: таблица `climate.climate_metrics_staging` (или parquet в `data_processed/`).
    * Файл `data_processed/dask_describe.csv` после запуска `python dask_jobs/sample_metrics.py --sample-frac 0.05`.
