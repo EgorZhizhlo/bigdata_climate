@@ -116,7 +116,12 @@ def compute_transform_artifacts(
 
     ddf = dd.concat(timeseries_parts, axis=0, interleave_partitions=True)
     ddf = ddf.rename(columns=_sanitize_column)
-    ddf["location_id"] = dd.to_numeric(ddf["location_id"], errors="coerce")
+    if "location_id" in ddf.columns:
+        ddf["location_id"] = dd.to_numeric(ddf["location_id"], errors="coerce")
+    else:
+        ddf["location_id"] = None
+        if logger:
+            logger.info("No location_id column in timeseries; will rely on coordinates.")
     ddf["source_file"] = ddf["source_file"].astype("object")
 
     location_df = (
@@ -132,6 +137,8 @@ def compute_transform_artifacts(
         subset=["raw_location_hash"]
     )
 
+    if "location_id" not in location_df.columns:
+        location_df["location_id"] = None
     location_ddf = dd.from_pandas(location_df, npartitions=1)
     ddf = ddf.merge(location_ddf, on=["source_file", "location_id"], how="left")
     columns = set(ddf.columns)
