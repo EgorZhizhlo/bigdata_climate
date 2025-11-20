@@ -1,0 +1,15 @@
+.venv
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.mypy_cache
+.DS_Store
+.git
+.gitignore
+logs
+data_raw
+data_processed
+pg_data
+*.log
+.env
