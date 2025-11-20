@@ -1,5 +1,5 @@
 # Shared configuration helpers for Prefect flows.
-"""Этот файл хранит все пути и строки подключения, чтобы потоки Prefect не искали их по всему проекту."""
+"""Файл хранит пути и строки подключения, которыми пользуются потоки Prefect."""
 
 from __future__ import annotations
 
